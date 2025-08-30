@@ -59,6 +59,7 @@
     <Compile Include="CmdParameterToggle.cs" />
     <Compile Include="CmdParameterToggleCommands.cs" />
     <Compile Include="CmdRunCalculation.cs" />
+    <Compile Include="CmdSelectSphere.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SharedParameters.cs" />
   </ItemGroup>

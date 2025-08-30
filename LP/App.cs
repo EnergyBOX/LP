@@ -53,6 +53,13 @@ namespace LP
                     "LP.CmdExcludeZone");
                 excludeZone.ToolTip = "The parameter will be disabled on the selected element, removing its designation as the volume protected by the rod for calculation purposes.";
 
+                PushButtonData selectSphere = new PushButtonData(
+                    "SelectSphere",
+                    "Select \nSphere",
+                    assemblyPath,
+                    "LP.CmdSelectSphere");
+                selectSphere.ToolTip = "Check if LP_Sphere family is loaded, then select a sphere radius for calculations.";
+
                 PushButtonData runCalculation = new PushButtonData(
                     "RunCalculation",
                     "Perform \nCalculation",

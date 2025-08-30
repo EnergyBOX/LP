@@ -11,8 +11,8 @@ namespace LP
         public static readonly List<(string Name, ForgeTypeId Type, ForgeTypeId Group, string Description)> Parameters =
             new List<(string, ForgeTypeId, ForgeTypeId, string)>
             {
-                ("LP_Is_LightningRod", SpecTypeId.Boolean.YesNo, GroupTypeId.IdentityData, "Lightning protection marker"),
-                ("LP_Is_ProtectedZone", SpecTypeId.Boolean.YesNo, GroupTypeId.IdentityData, "Zone protected by lightning rod")
+                ("LP_Is_LightningRod", SpecTypeId.Boolean.YesNo, GroupTypeId.IdentityData, "Mark it as Lightning protection Rod"),
+                ("LP_Is_ProtectedZone", SpecTypeId.Boolean.YesNo, GroupTypeId.IdentityData, "Mark it as Zone protected by lightning rod")
             };
 
         /// <summary>
