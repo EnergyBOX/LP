@@ -85,6 +85,7 @@ namespace LP
                 panel.AddItem(excludeRod);
                 panel.AddItem(includeZone);
                 panel.AddItem(excludeZone);
+                panel.AddItem(selectSphere);
                 panel.AddItem(runCalculation);
                 panel.AddItem(clearResults);
                 panel.AddItem(currentResult);
