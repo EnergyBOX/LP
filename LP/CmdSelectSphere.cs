@@ -22,25 +22,15 @@ namespace LP
 
                 // 1. Перевіряємо чи сімейство є у проекті
                 Family family = new FilteredElementCollector(doc)
-                                    .OfClass(typeof(Family))
-                                    .Cast<Family>()
-                                    .FirstOrDefault(f => f.Name == familyName);
+                    .OfClass(typeof(Family))
+                    .Cast<Family>()
+                    .FirstOrDefault(f => f.Name == "LP_Sphere");
 
                 if (family == null)
                 {
-                    if (!File.Exists(familyPath))
-                    {
-                        TaskDialog.Show("Error", $"Family file not found: {familyPath}");
-                        return Result.Failed;
-                    }
-
-                    using (Transaction t = new Transaction(doc, "Load LP_Sphere"))
-                    {
-                        t.Start();
-                        doc.LoadFamily(familyPath, out family);
-                        t.Commit();
-                    }
+                    family = FamilyLoader.LoadLPSphere(doc);
                 }
+
 
                 // 2. Отримуємо всі типи сімейства
                 var symbols = new FilteredElementCollector(doc)
