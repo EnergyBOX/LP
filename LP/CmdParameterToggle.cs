@@ -5,9 +5,11 @@ using System.Linq;
 
 namespace LP
 {
-    [Transaction(TransactionMode.Manual)]
-    public class CmdIncludeRod : IExternalCommand
+    public abstract class CmdParameterToggle : IExternalCommand
     {
+        protected abstract string ParameterName { get; }
+        protected abstract int ParameterValue { get; }
+
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
             UIDocument uiDoc = commandData.Application.ActiveUIDocument;
@@ -27,10 +29,10 @@ namespace LP
                 }
 
                 var defs = SharedParameters.GetOrCreate(doc.Application);
-                var lightningDef = defs.FirstOrDefault(d => d.Name == "LP_Is_LightningRod");
-                if (lightningDef == null)
+                var targetDef = defs.FirstOrDefault(d => d.Name == ParameterName);
+                if (targetDef == null)
                 {
-                    TaskDialog.Show("Error", "Shared parameter not found.");
+                    TaskDialog.Show("Error", $"Shared parameter {ParameterName} not found.");
                     return Result.Failed;
                 }
 
@@ -39,26 +41,26 @@ namespace LP
                     if (el.Category != null)
                         categories.Insert(el.Category);
 
-                using (Transaction t = new Transaction(doc, "Bind LP_Is_LightningRod"))
+                using (Transaction t = new Transaction(doc, $"Bind {ParameterName}"))
                 {
                     t.Start();
-                    SharedParameters.BindToCategories(doc, new[] { lightningDef }, categories);
+                    SharedParameters.BindToCategories(doc, new[] { targetDef }, categories);
                     t.Commit();
                 }
 
-                using (Transaction t = new Transaction(doc, "Set LP_Is_LightningRod"))
+                using (Transaction t = new Transaction(doc, $"Set {ParameterName}"))
                 {
                     t.Start();
                     foreach (var el in selectedElements)
                     {
-                        Parameter p = el.LookupParameter("LP_Is_LightningRod");
+                        Parameter p = el.LookupParameter(ParameterName);
                         if (p != null && !p.IsReadOnly)
-                            p.Set(1);
+                            p.Set(ParameterValue);
                     }
                     t.Commit();
                 }
 
-                TaskDialog.Show("Info", "LP_Is_LightningRod applied to selected elements.");
+                TaskDialog.Show("Info", $"{ParameterName} set to {ParameterValue}.");
                 return Result.Succeeded;
             }
             catch (System.Exception ex)

@@ -7,7 +7,7 @@ namespace LP
 {
     public static class SharedParameters
     {
-        // Список параметрів
+        // Список усіх параметрів
         public static readonly List<(string Name, ForgeTypeId Type, ForgeTypeId Group, string Description)> Parameters =
             new List<(string, ForgeTypeId, ForgeTypeId, string)>
             {
@@ -16,7 +16,7 @@ namespace LP
             };
 
         /// <summary>
-        /// Створює або повертає ExternalDefinition для кожного параметра
+        /// Створює або повертає ExternalDefinition для всіх параметрів
         /// </summary>
         public static List<ExternalDefinition> GetOrCreate(Application app)
         {
@@ -50,19 +50,33 @@ namespace LP
         }
 
         /// <summary>
-        /// Прив'язуємо всі параметри до потрібних категорій
+        /// Прив’язуємо параметри до категорій (оновлює binding, якщо вже є)
         /// </summary>
         public static void BindToCategories(Document doc, IEnumerable<ExternalDefinition> defs, CategorySet categories)
         {
             BindingMap map = doc.ParameterBindings;
-            InstanceBinding binding = doc.Application.Create.NewInstanceBinding(categories);
 
             foreach (var def in defs)
             {
-                if (!map.Contains(def))
+                var group = Parameters.Find(p => p.Name == def.Name).Group;
+
+                if (map.Contains(def))
                 {
-                    var group = Parameters.Find(p => p.Name == def.Name).Group;
-                    map.Insert(def, binding, group);
+                    // Якщо параметр вже прив’язаний – об’єднуємо категорії
+                    Binding existingBinding = map.get_Item(def);
+                    CategorySet existingCats = (existingBinding as InstanceBinding)?.Categories;
+
+                    CategorySet mergedCats = doc.Application.Create.NewCategorySet();
+                    foreach (Category c in existingCats) mergedCats.Insert(c);
+                    foreach (Category c in categories) mergedCats.Insert(c);
+
+                    InstanceBinding mergedBinding = doc.Application.Create.NewInstanceBinding(mergedCats);
+                    map.ReInsert(def, mergedBinding, group);
+                }
+                else
+                {
+                    InstanceBinding newBinding = doc.Application.Create.NewInstanceBinding(categories);
+                    map.Insert(def, newBinding, group);
                 }
             }
         }
