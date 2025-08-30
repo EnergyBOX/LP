@@ -32,7 +32,7 @@ namespace LP
                     mainContent.AppendLine($"=== Lightning Rods ({rodsYes.Count}) ===");
                     foreach (var el in rodsYes)
                     {
-                        string typeName = el.Name; // або el.GetType().Name для класу .NET, якщо потрібно
+                        string typeName = el.Name;
                         string pos = el.Location is LocationPoint lp ?
                             $"X={lp.Point.X:F2}, Y={lp.Point.Y:F2}, Z={lp.Point.Z:F2}" : "N/A";
                         mainContent.AppendLine($"  Type: {typeName} | Id: {el.Id} | Position: {pos}");
@@ -83,6 +83,7 @@ namespace LP
                     mainContent.AppendLine("No elements with 'Yes' values found.");
                 }
 
+                // ===== Вивід TaskDialog =====
                 TaskDialog td = new TaskDialog("Current Lightning Protection Status")
                 {
                     MainInstruction = "Elements considered in lightning protection calculations by LP plugin",
@@ -92,6 +93,18 @@ namespace LP
                 };
 
                 td.Show();
+
+                // ===== Виділення елементів у активному виді =====
+                var highlightElements = rodsYes.Select(e => e.Id)
+                    .Concat(zonesYes.Select(e => e.Id))
+                    .Concat(spheresYes.Select(e => e.Id))
+                    .ToList();
+
+                if (highlightElements.Any())
+                {
+                    uiDoc.Selection.SetElementIds(highlightElements);
+                }
+
                 return Result.Succeeded;
             }
             catch (System.Exception ex)
