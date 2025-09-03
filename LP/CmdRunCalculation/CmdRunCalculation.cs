@@ -12,6 +12,7 @@ namespace LP
     {
         private const string ParamIsRod = "LP_Is_LightningRod"; // Yes/No параметр
         private const string ParamRadius = "LP_Radius"; // Global parameter (double)
+        private const string FamilyName = "LP_Sphere"; // назва сімейства сфер
 
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
@@ -52,8 +53,9 @@ namespace LP
                     }
 
                     int placed = 0;
+                    double tolerance = 0.001; // допустиме наближення для уникнення дублікатів
 
-                    // 4. Допоміжна функція перевірки, чи точка всередині сфери
+                    // 4. Допоміжні функції
                     bool IsTipInsideSphere(XYZ center, double radius, List<XYZ> tipPoints, int[] excludeIndices)
                     {
                         for (int i = 0; i < tipPoints.Count; i++)
@@ -68,8 +70,23 @@ namespace LP
                         return false;
                     }
 
+                    bool IsSphereAlreadyPlaced(Document d, XYZ location, double tol)
+                    {
+                        var existingSpheres = new FilteredElementCollector(d)
+                            .OfClass(typeof(FamilyInstance))
+                            .Cast<FamilyInstance>()
+                            .Where(fi => fi.Symbol.Family.Name == FamilyName);
 
-                    // 5. Перебираємо всі трійки точок
+                        foreach (var fi in existingSpheres)
+                        {
+                            LocationPoint lp = fi.Location as LocationPoint;
+                            if (lp != null && lp.Point.DistanceTo(location) < tol)
+                                return true; // вже є сфера в цій точці
+                        }
+                        return false;
+                    }
+
+                    // 5. Перебір всіх трійок точок
                     for (int i = 0; i < tips.Count; i++)
                     {
                         for (int j = i + 1; j < tips.Count; j++)
@@ -80,9 +97,7 @@ namespace LP
                                 XYZ p2 = tips[j];
                                 XYZ p3 = tips[k];
 
-                                // шукаємо точки перетину трьох сфер
                                 List<XYZ> pts = Service_SphereIntersection.IntersectThreeSpheres(p1, p2, p3, R);
-
                                 int[] indices = { i, j, k }; // вершини трикутника
 
                                 foreach (var pt in pts)
@@ -90,9 +105,12 @@ namespace LP
                                     // пропускаємо, якщо всередині сфери є вершина
                                     if (IsTipInsideSphere(pt, R, tips, indices)) continue;
 
+                                    // пропускаємо, якщо сфера вже існує у цій точці
+                                    if (IsSphereAlreadyPlaced(doc, pt, tolerance)) continue;
+
                                     XYZ chosen = pt;
                                     if (pts.Count == 2)
-                                        chosen = pts.OrderByDescending(p => p.Z).First(); // вибираємо верхню точку
+                                        chosen = pts.OrderByDescending(p => p.Z).First(); // верхня точка
 
                                     using (Transaction t = new Transaction(doc, "Place Sphere"))
                                     {
