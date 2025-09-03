@@ -53,7 +53,23 @@ namespace LP
 
                     int placed = 0;
 
-                    // 4. Перебираємо всі трійки точок
+                    // 4. Допоміжна функція перевірки, чи точка всередині сфери
+                    bool IsTipInsideSphere(XYZ center, double radius, List<XYZ> tipPoints, int[] excludeIndices)
+                    {
+                        for (int i = 0; i < tipPoints.Count; i++)
+                        {
+                            if (excludeIndices.Contains(i)) continue;
+                            double dx = center.X - tipPoints[i].X;
+                            double dy = center.Y - tipPoints[i].Y;
+                            double dz = center.Z - tipPoints[i].Z;
+                            if ((dx * dx + dy * dy + dz * dz) < radius * radius)
+                                return true;
+                        }
+                        return false;
+                    }
+
+
+                    // 5. Перебираємо всі трійки точок
                     for (int i = 0; i < tips.Count; i++)
                     {
                         for (int j = i + 1; j < tips.Count; j++)
@@ -67,27 +83,26 @@ namespace LP
                                 // шукаємо точки перетину трьох сфер
                                 List<XYZ> pts = Service_SphereIntersection.IntersectThreeSpheres(p1, p2, p3, R);
 
-                                if (pts.Count == 1)
+                                int[] indices = { i, j, k }; // вершини трикутника
+
+                                foreach (var pt in pts)
                                 {
-                                    using (Transaction t = new Transaction(doc, "Place Sphere"))
-                                    {
-                                        t.Start();
-                                        FamilyUtils.PlaceSphereVoid(doc, pts[0], R);
-                                        t.Commit();
-                                    }
-                                    placed++;
-                                }
-                                else if (pts.Count == 2)
-                                {
-                                    // вибираємо вищу точку
-                                    XYZ chosen = pts.OrderByDescending(p => p.Z).First();
+                                    // пропускаємо, якщо всередині сфери є вершина
+                                    if (IsTipInsideSphere(pt, R, tips, indices)) continue;
+
+                                    XYZ chosen = pt;
+                                    if (pts.Count == 2)
+                                        chosen = pts.OrderByDescending(p => p.Z).First(); // вибираємо верхню точку
+
                                     using (Transaction t = new Transaction(doc, "Place Sphere"))
                                     {
                                         t.Start();
                                         FamilyUtils.PlaceSphereVoid(doc, chosen, R);
                                         t.Commit();
                                     }
+
                                     placed++;
+                                    break; // вставляємо лише одну сферу для цієї трійки
                                 }
                             }
                         }
