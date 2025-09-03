@@ -60,14 +60,16 @@
     <Compile Include="CmdParameterToggleCommands\CmdParameterToggle.cs" />
     <Compile Include="CmdParameterToggleCommands\CmdParameterToggleCommands.cs" />
     <Compile Include="CmdRunCalculation\CmdRunCalculation.cs" />
+    <Compile Include="CmdRunCalculation\ElementUtils.cs" />
+    <Compile Include="CmdRunCalculation\FamilyUtils.cs" />
     <Compile Include="CmdRunCalculation\Collision.cs" />
-    <Compile Include="CmdRunCalculation\DirectShapeUtils.cs" />
-    <Compile Include="CmdRunCalculation\GeometryUtils.cs" />
+    <Compile Include="CmdRunCalculation\old\GeometryUtils.cs" />
     <Compile Include="CmdRunCalculation\Query.cs" />
-    <Compile Include="CmdRunCalculation\SolidSphereBuilder.cs" />
-    <Compile Include="CmdRunCalculation\SolidUtilsEx.cs" />
-    <Compile Include="CmdRunCalculation\SpatialHash2D.cs" />
+    <Compile Include="CmdRunCalculation\old\SpatialHash2D.cs" />
+    <Compile Include="CmdRunCalculation\Service_SphereIntersection.cs" />
     <Compile Include="CmdRunCalculation\SphereMath.cs" />
+    <Compile Include="CmdRunCalculation\SpatialHash3D.cs" />
+    <Compile Include="CmdRunCalculation\Sphere.cs" />
     <Compile Include="CmdSelectSphere\CmdSelectSphere.cs" />
     <Compile Include="CmdSelectSphere\FamilyLoader.cs" />
     <Compile Include="Parameters\GlobalParams.cs" />
@@ -77,6 +79,8 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\LP_Sphere.rfa" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="CmdRunCalculation\CmdRunCalculationSchema.txt" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
