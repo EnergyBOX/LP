@@ -57,6 +57,7 @@
     <Compile Include="App.cs" />
     <Compile Include="CmdClearResults\CmdClearResults.cs" />
     <Compile Include="CmdCurrentResult\CmdCurrentResult.cs" />
+    <Compile Include="CmdCutProtectedZones\CmdCutProtectedZones.cs" />
     <Compile Include="CmdParameterToggleCommands\CmdParameterToggle.cs" />
     <Compile Include="CmdParameterToggleCommands\CmdParameterToggleCommands.cs" />
     <Compile Include="CmdRunCalculation\FamilyUtils.cs" />
@@ -79,5 +80,6 @@
   <ItemGroup>
     <Content Include="CmdRunCalculation\CmdRunCalculationSchema.txt" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -60,7 +60,7 @@ namespace LP
 
                 // ===== Spheres =====
                 var spheresYes = allElements
-                    .Where(el => el.LookupParameter("LP_Is_SpereThatCutsOff")?.AsInteger() == 1)
+                    .Where(el => el.LookupParameter("LP_Is_SphereThatCutsOff")?.AsInteger() == 1)
                     .Cast<FamilyInstance>()
                     .ToList();
 

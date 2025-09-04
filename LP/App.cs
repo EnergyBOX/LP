@@ -67,6 +67,13 @@ namespace LP
                     "LP.CmdRunCalculation");
                 runCalculation.ToolTip = "Previous results will be deleted, and the calculation will be performed for all involved elements.";
 
+                PushButtonData cutZones = new PushButtonData(
+                    "CutProtectedZones",
+                    "Cut \nProtected \nZones",
+                    assemblyPath,
+                    "LP.CmdCutProtectedZones");
+                cutZones.ToolTip = "Cut all protected zones using sphere-voids in the project.";
+
                 PushButtonData clearResults = new PushButtonData(
                     "ClearResults",
                     "Clear \nCalculation \nResults",
@@ -87,6 +94,7 @@ namespace LP
                 panel.AddItem(excludeZone);
                 panel.AddItem(selectSphere);
                 panel.AddItem(runCalculation);
+                panel.AddItem(cutZones);
                 panel.AddItem(clearResults);
                 panel.AddItem(currentResult);
 
