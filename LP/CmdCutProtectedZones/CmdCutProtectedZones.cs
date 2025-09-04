@@ -62,19 +62,21 @@ namespace LP
                         {
                             foreach (var sphere in cutSpheres)
                             {
-                                try
+                                // Перевірка, чи BoundingBox перетинаються
+                                if (BoundingBoxesIntersect(zone, sphere))
                                 {
-                                    // Перевірка чи можна зробити обрізку
-                                    if (InstanceVoidCutUtils.CanBeCutWithVoid(zone))
+                                    try
                                     {
-                                        InstanceVoidCutUtils.AddInstanceVoidCut(doc, zone, sphere);
-                                        cutCount++;
+                                        if (InstanceVoidCutUtils.CanBeCutWithVoid(zone))
+                                        {
+                                            InstanceVoidCutUtils.AddInstanceVoidCut(doc, zone, sphere);
+                                            cutCount++;
+                                        }
                                     }
-                                }
-                                catch
-                                {
-                                    // Якщо не вдалося обрізати цю зону цією сферою - пропускаємо
-                                    continue;
+                                    catch
+                                    {
+                                        continue; // Якщо обрізка не вдалася, пропускаємо
+                                    }
                                 }
                             }
                         }
@@ -97,6 +99,21 @@ namespace LP
                 message = ex.Message;
                 return Result.Failed;
             }
+        }
+
+        /// <summary>
+        /// Перевіряє, чи перетинаються BoundingBox двох FamilyInstance
+        /// </summary>
+        private bool BoundingBoxesIntersect(FamilyInstance fi1, FamilyInstance fi2)
+        {
+            BoundingBoxXYZ box1 = fi1.get_BoundingBox(null);
+            BoundingBoxXYZ box2 = fi2.get_BoundingBox(null);
+
+            if (box1 == null || box2 == null) return false;
+
+            return (box1.Min.X <= box2.Max.X && box1.Max.X >= box2.Min.X) &&
+                   (box1.Min.Y <= box2.Max.Y && box1.Max.Y >= box2.Min.Y) &&
+                   (box1.Min.Z <= box2.Max.Z && box1.Max.Z >= box2.Min.Z);
         }
     }
 }
