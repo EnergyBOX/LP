@@ -3,11 +3,11 @@ using System.Collections.Generic;
 
 namespace LP
 {
+    /// <summary>
+    /// Геометричні обчислення, зокрема визначення верхівок елементів.
+    /// </summary>
     public static class GeometryUtils
     {
-        /// <summary>
-        /// Обчислює верхівку елемента як центр мас верхнього "слайсу" BoundingBox (товщина ~ 1 мм).
-        /// </summary>
         public static List<XYZ> ComputeTipPoints(Document doc, List<Element> rods)
         {
             var tips = new List<XYZ>();
@@ -28,7 +28,6 @@ namespace LP
                 double zTop = bbox.Max.Z;
                 double zBottom = zTop - mm;
 
-                // Проходимо по твердим тілам і вибираємо їхні вершини в тонкому шарі
                 var geo = e.get_Geometry(opt);
                 if (geo == null) continue;
 
@@ -36,24 +35,17 @@ namespace LP
                 foreach (var obj in geo)
                 {
                     if (obj is GeometryInstance gi)
-                    {
-                        var inst = gi.GetInstanceGeometry();
-                        GatherPointsInZBand(inst, zBottom, zTop, pts);
-                    }
+                        GatherPointsInZBand(gi.GetInstanceGeometry(), zBottom, zTop, pts);
                     else if (obj is Solid s && s.Volume > 1e-9)
-                    {
                         GatherPointsInZBand(s, zBottom, zTop, pts);
-                    }
                 }
 
                 if (pts.Count == 0)
                 {
-                    // fallback — беремо центр верхньої площини bbox
                     tips.Add(new XYZ((bbox.Min.X + bbox.Max.X) * 0.5, (bbox.Min.Y + bbox.Max.Y) * 0.5, bbox.Max.Z));
                 }
                 else
                 {
-                    // центр мас точок у шарі
                     double cx = 0, cy = 0, cz = 0;
                     foreach (var p in pts) { cx += p.X; cy += p.Y; cz += p.Z; }
                     tips.Add(new XYZ(cx / pts.Count, cy / pts.Count, cz / pts.Count));
