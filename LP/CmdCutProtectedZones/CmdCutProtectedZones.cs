@@ -12,6 +12,7 @@ namespace LP
     {
         private const string ParamIsProtectedZone = "LP_Is_ProtectedZone";
         private const string ParamIsSphereThatCutsOff = "LP_Is_SphereThatCutsOff";
+        private const string ParamDebugUpdate = "LP_DebugUpdate"; // тимчасовий параметр для примусового оновлення
 
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
@@ -65,7 +66,6 @@ namespace LP
                         }
                     }
 
-                    // 4. Виконуємо ретраї
                     var pending = pairs.ToList();
                     int maxPasses = 5;
                     var rnd = new Random(12345);
@@ -83,6 +83,15 @@ namespace LP
 
                             foreach (var pair in pending.ToList())
                             {
+                                // Примусово оновлюємо сферу, змінюючи debug-параметр
+                                var debugParam = pair.sphere.LookupParameter(ParamDebugUpdate);
+                                if (debugParam != null && debugParam.StorageType == StorageType.Integer)
+                                {
+                                    debugParam.Set((debugParam.AsInteger() + 1) % 1000);
+                                }
+
+                                doc.Regenerate(); // перерахунок геометрії
+
                                 if (!InstanceVoidCutUtils.CanBeCutWithVoid(pair.zone))
                                     continue;
 
@@ -92,10 +101,6 @@ namespace LP
                                     pending.Remove(pair);
                                     anySuccessThisPass = true;
                                 }
-                                else
-                                {
-                                    TaskDialog.Show("Debug", $"Retry failed in pass {pass}:\nZone Id: {pair.zone.Id}\nSphere Id: {pair.sphere.Id}");
-                                }
                             }
 
                             doc.Regenerate();
@@ -103,56 +108,6 @@ namespace LP
                         }
 
                         t.Commit();
-                    }
-
-                    // 5. Повторна спроба для завислих сфер
-                    if (pending.Count > 0)
-                    {
-                        using (Transaction t2 = new Transaction(doc, "LP | Retry failed spheres"))
-                        {
-                            t2.Start();
-
-                            foreach (var pair in pending.ToList())
-                            {
-                                try
-                                {
-                                    var location = pair.sphere.Location as LocationPoint;
-                                    if (location == null)
-                                    {
-                                        TaskDialog.Show("Debug", $"Sphere {pair.sphere.Id} has no LocationPoint.");
-                                        continue;
-                                    }
-
-                                    var point = location.Point;
-                                    var familySymbol = pair.sphere.Symbol;
-
-                                    // Видалити старий екземпляр
-                                    doc.Delete(pair.sphere.Id);
-
-                                    // Вставити новий екземпляр на тій же позиції
-                                    FamilyInstance newSphere = doc.Create.NewFamilyInstance(
-                                        point, familySymbol, pair.zone,
-                                        Autodesk.Revit.DB.Structure.StructuralType.NonStructural);
-
-                                    // Спробувати cut заново
-                                    if (TryAddVoidCutOnce(doc, pair.zone, newSphere))
-                                    {
-                                        cutCount++;
-                                        pending.Remove(pair);
-                                    }
-                                    else
-                                    {
-                                        TaskDialog.Show("Debug", $"Failed again after re-insert:\nZone Id: {pair.zone.Id}\nSphere Id: {newSphere.Id}");
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    TaskDialog.Show("Debug", $"Exception for Zone {pair.zone.Id} Sphere {pair.sphere.Id}:\n{ex.Message}");
-                                }
-                            }
-
-                            t2.Commit();
-                        }
                     }
 
                     tg.Assimilate();
