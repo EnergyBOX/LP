@@ -54,34 +54,105 @@ namespace LP
 
                     int cutCount = 0;
 
+                    // 3. Формуємо список усіх пар zone + sphere для обрізки
+                    var pairs = new List<(FamilyInstance zone, FamilyInstance sphere)>();
+                    foreach (var zone in protectedZones)
+                    {
+                        foreach (var sphere in cutSpheres)
+                        {
+                            if (BoundingBoxesIntersect(zone, sphere))
+                                pairs.Add((zone, sphere));
+                        }
+                    }
+
+                    // 4. Виконуємо ретраї
+                    var pending = pairs.ToList();
+                    int maxPasses = 5;
+                    var rnd = new Random(12345);
+                    int pass = 0;
+
                     using (Transaction t = new Transaction(doc, "LP | Apply Void Cuts"))
                     {
                         t.Start();
 
-                        foreach (var zone in protectedZones)
+                        while (pending.Count > 0 && pass < maxPasses)
                         {
-                            foreach (var sphere in cutSpheres)
+                            pass++;
+                            bool anySuccessThisPass = false;
+                            pending = pending.OrderBy(_ => rnd.Next()).ToList();
+
+                            foreach (var pair in pending.ToList())
                             {
-                                // Перевірка, чи BoundingBox перетинаються
-                                if (BoundingBoxesIntersect(zone, sphere))
+                                if (!InstanceVoidCutUtils.CanBeCutWithVoid(pair.zone))
+                                    continue;
+
+                                if (TryAddVoidCutOnce(doc, pair.zone, pair.sphere))
                                 {
-                                    try
-                                    {
-                                        if (InstanceVoidCutUtils.CanBeCutWithVoid(zone))
-                                        {
-                                            InstanceVoidCutUtils.AddInstanceVoidCut(doc, zone, sphere);
-                                            cutCount++;
-                                        }
-                                    }
-                                    catch
-                                    {
-                                        continue; // Якщо обрізка не вдалася, пропускаємо
-                                    }
+                                    cutCount++;
+                                    pending.Remove(pair);
+                                    anySuccessThisPass = true;
+                                }
+                                else
+                                {
+                                    TaskDialog.Show("Debug", $"Retry failed in pass {pass}:\nZone Id: {pair.zone.Id}\nSphere Id: {pair.sphere.Id}");
                                 }
                             }
+
+                            doc.Regenerate();
+                            if (!anySuccessThisPass) break;
                         }
 
                         t.Commit();
+                    }
+
+                    // 5. Повторна спроба для завислих сфер
+                    if (pending.Count > 0)
+                    {
+                        using (Transaction t2 = new Transaction(doc, "LP | Retry failed spheres"))
+                        {
+                            t2.Start();
+
+                            foreach (var pair in pending.ToList())
+                            {
+                                try
+                                {
+                                    var location = pair.sphere.Location as LocationPoint;
+                                    if (location == null)
+                                    {
+                                        TaskDialog.Show("Debug", $"Sphere {pair.sphere.Id} has no LocationPoint.");
+                                        continue;
+                                    }
+
+                                    var point = location.Point;
+                                    var familySymbol = pair.sphere.Symbol;
+
+                                    // Видалити старий екземпляр
+                                    doc.Delete(pair.sphere.Id);
+
+                                    // Вставити новий екземпляр на тій же позиції
+                                    FamilyInstance newSphere = doc.Create.NewFamilyInstance(
+                                        point, familySymbol, pair.zone,
+                                        Autodesk.Revit.DB.Structure.StructuralType.NonStructural);
+
+                                    // Спробувати cut заново
+                                    if (TryAddVoidCutOnce(doc, pair.zone, newSphere))
+                                    {
+                                        cutCount++;
+                                        pending.Remove(pair);
+                                    }
+                                    else
+                                    {
+                                        TaskDialog.Show("Debug", $"Failed again after re-insert:\nZone Id: {pair.zone.Id}\nSphere Id: {newSphere.Id}");
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    TaskDialog.Show("Debug", $"Exception for Zone {pair.zone.Id} Sphere {pair.sphere.Id}:\n{ex.Message}");
+                                }
+                            }
+
+                            t2.Commit();
+                        }
                     }
 
                     tg.Assimilate();
@@ -89,7 +160,8 @@ namespace LP
                     TaskDialog.Show("LP - Report",
                         $"Зон для обрізки: {protectedZones.Count}\n" +
                         $"Сфер-обрізок: {cutSpheres.Count}\n" +
-                        $"Вдалих обрізок: {cutCount}");
+                        $"Вдалих обрізок: {cutCount}\n" +
+                        $"Не вдалося обрізати: {pending.Count}");
 
                     return Result.Succeeded;
                 }
@@ -101,9 +173,25 @@ namespace LP
             }
         }
 
-        /// <summary>
-        /// Перевіряє, чи перетинаються BoundingBox двох FamilyInstance
-        /// </summary>
+        private bool TryAddVoidCutOnce(Document doc, FamilyInstance zone, FamilyInstance sphere)
+        {
+            using (var st = new SubTransaction(doc))
+            {
+                try
+                {
+                    st.Start();
+                    InstanceVoidCutUtils.AddInstanceVoidCut(doc, zone, sphere);
+                    st.Commit();
+                    return true;
+                }
+                catch
+                {
+                    st.RollBack();
+                    return false;
+                }
+            }
+        }
+
         private bool BoundingBoxesIntersect(FamilyInstance fi1, FamilyInstance fi2)
         {
             BoundingBoxXYZ box1 = fi1.get_BoundingBox(null);
