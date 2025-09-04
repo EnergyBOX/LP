@@ -12,7 +12,6 @@ namespace LP
     {
         private const string ParamIsProtectedZone = "LP_Is_ProtectedZone";
         private const string ParamIsSphereThatCutsOff = "LP_Is_SphereThatCutsOff";
-        private const string ParamDebugUpdate = "LP_DebugUpdate"; // тимчасовий параметр для примусового оновлення
 
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
@@ -21,129 +20,85 @@ namespace LP
 
             try
             {
-                using (TransactionGroup tg = new TransactionGroup(doc, "LP | Cut Protected Zones"))
+                // 1. Знаходимо усі зони
+                var protectedZones = new FilteredElementCollector(doc)
+                    .OfClass(typeof(FamilyInstance))
+                    .Cast<FamilyInstance>()
+                    .Where(f => f.LookupParameter(ParamIsProtectedZone)?.AsInteger() == 1)
+                    .ToList();
+
+                if (protectedZones.Count == 0)
                 {
-                    tg.Start();
+                    TaskDialog.Show("LP", "Зони для захисту не знайдені.");
+                    return Result.Succeeded;
+                }
 
-                    // 1. Знаходимо усі зони
-                    var protectedZones = new FilteredElementCollector(doc)
-                        .OfClass(typeof(FamilyInstance))
-                        .Cast<FamilyInstance>()
-                        .Where(f => f.LookupParameter(ParamIsProtectedZone)?.AsInteger() == 1)
-                        .ToList();
+                // 2. Знаходимо всі сфери-обрізки
+                var cutSpheres = new FilteredElementCollector(doc)
+                    .OfClass(typeof(FamilyInstance))
+                    .Cast<FamilyInstance>()
+                    .Where(f => f.LookupParameter(ParamIsSphereThatCutsOff)?.AsInteger() == 1)
+                    .ToList();
 
-                    if (protectedZones.Count == 0)
+                if (cutSpheres.Count == 0)
+                {
+                    TaskDialog.Show("LP", "Сфери для обрізки не знайдені.");
+                    return Result.Succeeded;
+                }
+
+                // 3. Формуємо список усіх пар zone + sphere для обрізки
+                var pairs = new List<(FamilyInstance zone, FamilyInstance sphere)>();
+                foreach (var zone in protectedZones)
+                {
+                    foreach (var sphere in cutSpheres)
                     {
-                        TaskDialog.Show("LP", "Зони для захисту не знайдені.");
-                        tg.RollBack();
-                        return Result.Succeeded;
+                        if (BoundingBoxesIntersect(zone, sphere))
+                            pairs.Add((zone, sphere));
                     }
+                }
 
-                    // 2. Знаходимо всі сфери-обрізки
-                    var cutSpheres = new FilteredElementCollector(doc)
-                        .OfClass(typeof(FamilyInstance))
-                        .Cast<FamilyInstance>()
-                        .Where(f => f.LookupParameter(ParamIsSphereThatCutsOff)?.AsInteger() == 1)
-                        .ToList();
+                int cutCount = 0;
+                var rnd = new Random(12345);
+                var pending = pairs.ToList();
 
-                    if (cutSpheres.Count == 0)
-                    {
-                        TaskDialog.Show("LP", "Сфери для обрізки не знайдені.");
-                        tg.RollBack();
-                        return Result.Succeeded;
-                    }
+                while (pending.Count > 0)
+                {
+                    // Беремо випадковий елемент
+                    var pair = pending[rnd.Next(pending.Count)];
 
-                    int cutCount = 0;
-
-                    // 3. Формуємо список усіх пар zone + sphere для обрізки
-                    var pairs = new List<(FamilyInstance zone, FamilyInstance sphere)>();
-                    foreach (var zone in protectedZones)
-                    {
-                        foreach (var sphere in cutSpheres)
-                        {
-                            if (BoundingBoxesIntersect(zone, sphere))
-                                pairs.Add((zone, sphere));
-                        }
-                    }
-
-                    var pending = pairs.ToList();
-                    int maxPasses = 5;
-                    var rnd = new Random(12345);
-                    int pass = 0;
-
-                    using (Transaction t = new Transaction(doc, "LP | Apply Void Cuts"))
+                    using (Transaction t = new Transaction(doc, $"LP | Cut {pair.sphere.Id}"))
                     {
                         t.Start();
-
-                        while (pending.Count > 0 && pass < maxPasses)
+                        try
                         {
-                            pass++;
-                            bool anySuccessThisPass = false;
-                            pending = pending.OrderBy(_ => rnd.Next()).ToList();
-
-                            foreach (var pair in pending.ToList())
+                            if (InstanceVoidCutUtils.CanBeCutWithVoid(pair.zone))
                             {
-                                // Примусово оновлюємо сферу, змінюючи debug-параметр
-                                var debugParam = pair.sphere.LookupParameter(ParamDebugUpdate);
-                                if (debugParam != null && debugParam.StorageType == StorageType.Integer)
-                                {
-                                    debugParam.Set((debugParam.AsInteger() + 1) % 1000);
-                                }
-
-                                doc.Regenerate(); // перерахунок геометрії
-
-                                if (!InstanceVoidCutUtils.CanBeCutWithVoid(pair.zone))
-                                    continue;
-
-                                if (TryAddVoidCutOnce(doc, pair.zone, pair.sphere))
-                                {
-                                    cutCount++;
-                                    pending.Remove(pair);
-                                    anySuccessThisPass = true;
-                                }
+                                InstanceVoidCutUtils.AddInstanceVoidCut(doc, pair.zone, pair.sphere);
+                                cutCount++;
                             }
-
-                            doc.Regenerate();
-                            if (!anySuccessThisPass) break;
                         }
-
+                        catch
+                        {
+                            // якщо не вдалось - пропускаємо
+                        }
                         t.Commit();
                     }
 
-                    tg.Assimilate();
-
-                    TaskDialog.Show("LP - Report",
-                        $"Зон для обрізки: {protectedZones.Count}\n" +
-                        $"Сфер-обрізок: {cutSpheres.Count}\n" +
-                        $"Вдалих обрізок: {cutCount}\n" +
-                        $"Не вдалося обрізати: {pending.Count}");
-
-                    return Result.Succeeded;
+                    // прибираємо оброблений елемент зі списку
+                    pending.Remove(pair);
                 }
+
+                TaskDialog.Show("LP - Report",
+                    $"Зон для обрізки: {protectedZones.Count}\n" +
+                    $"Сфер-обрізок: {cutSpheres.Count}\n" +
+                    $"Вдалих обрізок: {cutCount}");
+
+                return Result.Succeeded;
             }
             catch (Exception ex)
             {
                 message = ex.Message;
                 return Result.Failed;
-            }
-        }
-
-        private bool TryAddVoidCutOnce(Document doc, FamilyInstance zone, FamilyInstance sphere)
-        {
-            using (var st = new SubTransaction(doc))
-            {
-                try
-                {
-                    st.Start();
-                    InstanceVoidCutUtils.AddInstanceVoidCut(doc, zone, sphere);
-                    st.Commit();
-                    return true;
-                }
-                catch
-                {
-                    st.RollBack();
-                    return false;
-                }
             }
         }
 
