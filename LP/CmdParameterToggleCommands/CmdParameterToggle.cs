@@ -28,7 +28,7 @@ namespace LP
                     return Result.Succeeded;
                 }
 
-                var defs = SharedParameters.GetOrCreate(doc.Application);
+                var defs = SharedParametersService.GetOrCreate(doc.Application);
                 var targetDef = defs.FirstOrDefault(d => d.Name == ParameterName);
                 if (targetDef == null)
                 {
@@ -44,7 +44,7 @@ namespace LP
                 using (Transaction t = new Transaction(doc, $"Bind {ParameterName}"))
                 {
                     t.Start();
-                    SharedParameters.BindToCategories(doc, new[] { targetDef }, categories);
+                    SharedParametersService.BindToCategories(doc, new[] { targetDef }, categories);
                     t.Commit();
                 }
 

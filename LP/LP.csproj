@@ -68,11 +68,10 @@
     <Compile Include="CmdRunCalculation\Query.cs" />
     <Compile Include="CmdRunCalculation\SphereIntersectionUtils.cs" />
     <Compile Include="CmdSelectSphere\CmdSelectSphere.cs" />
-    <Compile Include="CmdSelectSphere\FamilyLoader.cs" />
+    <Compile Include="CmdSelectSphere\FamilyLoaderService.cs" />
     <Compile Include="Parameters\GlobalParamsService.cs" />
-    <Compile Include="Parameters\GlobalParams.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Parameters\SharedParameters.cs" />
+    <Compile Include="Parameters\SharedParametersService.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\LP_Sphere.rfa" />

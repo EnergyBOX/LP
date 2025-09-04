@@ -26,7 +26,7 @@ namespace LP
 
                 if (family == null)
                 {
-                    family = FamilyLoader.LoadLPSphere(doc); // ⚠️ Реалізуй метод FamilyLoader.LoadLPSphere
+                    family = FamilyLoaderService.LoadLPSphere(doc);
                 }
 
                 // 2. Отримуємо всі типи сімейства

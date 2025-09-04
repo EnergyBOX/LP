@@ -5,7 +5,7 @@ using System.IO;
 
 namespace LP
 {
-    public static class SharedParameters
+    public static class SharedParametersService
     {
         // Список усіх параметрів
         public static readonly List<(string Name, ForgeTypeId Type, ForgeTypeId Group, string Description)> Parameters =

@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace LP
 {
-    public static class FamilyLoader
+    public static class FamilyLoaderService
     {
         /// <summary>
         /// Вивантажує сімейство LP_Sphere.rfa з ресурсу в TEMP і завантажує в проект.
