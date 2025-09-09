@@ -78,8 +78,17 @@ namespace LP
 
                 TaskDialog.Show("Result", $"Selected LP_Mesh type: {selectedSymbol.Name}");
 
-                // Використовуємо Id.Value (Revit 2024)
-                SetGlobalParameter(doc, "LP_Mesh_Type", selectedSymbol.Id.Value);
+                // ✅ Отримуємо параметр радіусу та встановлюємо його у глобальний параметр LP_Radius
+                Parameter radiusParam = selectedSymbol.LookupParameter("LP_Sphere_Radius");
+                if (radiusParam == null)
+                {
+                    TaskDialog.Show("Error", "Selected symbol has no LP_Sphere_Radius parameter.");
+                    return Result.Failed;
+                }
+
+                double radiusFeet = radiusParam.AsDouble(); // internal Revit units = feet
+                SetGlobalParameter(doc, "LP_Radius", radiusFeet); // Записуємо в LP_Radius
+
 
                 return Result.Succeeded;
             }
@@ -90,7 +99,7 @@ namespace LP
             }
         }
 
-        private void SetGlobalParameter(Document doc, string paramName, double valueInFeet)
+        private void SetGlobalParameter(Document doc, string paramName, double valueFeet)
         {
             GlobalParameter gp = new FilteredElementCollector(doc)
                 .OfClass(typeof(GlobalParameter))
@@ -103,11 +112,11 @@ namespace LP
 
                 if (gp == null)
                 {
-                    gp = GlobalParameter.Create(doc, paramName, SpecTypeId.Length); // можливо, замінити на ForgeTypeId.Integer
+                    // Для глобальних параметрів типу Length
+                    gp = GlobalParameter.Create(doc, paramName, SpecTypeId.Length);
                 }
 
-                gp.SetValue(new DoubleParameterValue(valueInFeet));
-
+                gp.SetValue(new DoubleParameterValue(valueFeet));
                 tx.Commit();
             }
         }

@@ -68,14 +68,11 @@
     <Compile Include="CmdRunCalculation\SphereUtils.cs" />
     <Compile Include="CmdRunCalculation\Query.cs" />
     <Compile Include="CmdRunCalculation\SphereIntersectionUtils.cs" />
-    <Compile Include="CmdSelectSphere\CmdSelectMesh.cs" />
-    <Compile Include="CmdSelectSphere\FamilyLoaderService.cs" />
+    <Compile Include="CmdSelectMesh\CmdSelectMesh.cs" />
+    <Compile Include="CmdSelectMesh\FamilyLoaderService.cs" />
     <Compile Include="Parameters\GlobalParamsService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Parameters\SharedParametersService.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="CmdRunCalculation\CmdRunCalculationSchema.txt" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\LP_Mesh.rfa" />

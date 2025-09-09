@@ -16,9 +16,15 @@ namespace LP
         /// <summary>
         /// Вставка інстансу LP_Mesh (3 adaptive points) з вибором типу за параметром LP_Sphere_Radius.
         /// </summary>
-        public static FamilyInstance PlaceMash(Document doc, XYZ p1, XYZ p2, XYZ p3, double radius)
+        /// <param name="doc">Документ Revit</param>
+        /// <param name="sortedTriplet">Список трьох точок, відсортованих за годинниковою стрілкою</param>
+        /// <param name="radius">Радіус для вибору типу сімейства</param>
+        /// <returns>Вставлений FamilyInstance</returns>
+        public static FamilyInstance PlaceMash(Document doc, List<XYZ> sortedTriplet, double radius)
         {
             if (doc == null) throw new ArgumentNullException(nameof(doc));
+            if (sortedTriplet == null || sortedTriplet.Count != 3)
+                throw new ArgumentException("Треба передати рівно 3 точки.");
 
             // 1. Знаходимо символ LP_Mesh з потрібним радіусом
             FamilySymbol symbol = new FilteredElementCollector(doc)
@@ -47,14 +53,11 @@ namespace LP
             if (placePointIds.Count != 3)
                 throw new InvalidOperationException($"{MeshFamilyName} повинно мати рівно 3 adaptive points.");
 
-            // 4. Визначаємо порядок точок за годинниковою стрілкою
-            List<XYZ> sorted = SortClockwise(p1, p2, p3);
-
-            // 5. Присвоюємо координати
+            // 4. Присвоюємо координати трьох точок (відсортованих за годинниковою стрілкою)
             for (int i = 0; i < 3; i++)
             {
                 ReferencePoint rp = doc.GetElement(placePointIds[i]) as ReferencePoint;
-                if (rp != null) rp.Position = sorted[i];
+                if (rp != null) rp.Position = sortedTriplet[i];
             }
 
             return fi;
