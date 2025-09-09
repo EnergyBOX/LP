@@ -7,14 +7,13 @@ namespace LP
     public static class FamilyLoaderService
     {
         /// <summary>
-        /// Вивантажує сімейство LP_Sphere.rfa з ресурсу в TEMP і завантажує в проект.
+        /// Вивантажує сімейство LP_Mesh.rfa з ресурсу в TEMP і завантажує в проект.
         /// </summary>
-        public static Family LoadLPSphere(Document doc)
+        public static Family LoadLPMesh(Document doc)
         {
-            string resourceName = "LP.Resources.LP_Sphere.rfa"; // 👈 namespace + шлях у проекті
-            string tempFile = Path.Combine(Path.GetTempPath(), "LP_Sphere.rfa");
+            string resourceName = "LP.Resources.LP_Mesh.rfa"; // 👈 правильний namespace + шлях
+            string tempFile = Path.Combine(Path.GetTempPath(), "LP_Mesh.rfa");
 
-            // Скопіювати ресурс у тимчасовий файл
             using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
             {
                 if (stream == null)
@@ -26,12 +25,11 @@ namespace LP
                 }
             }
 
-            // Завантажити у Revit
-            using (Transaction t = new Transaction(doc, "Load LP_Sphere"))
+            using (Transaction t = new Transaction(doc, "Load LP_Mesh"))
             {
                 t.Start();
                 if (!doc.LoadFamily(tempFile, out Family family))
-                    throw new IOException("Failed to load LP_Sphere family into project.");
+                    throw new IOException("Failed to load LP_Mesh family into project.");
                 t.Commit();
                 return family;
             }

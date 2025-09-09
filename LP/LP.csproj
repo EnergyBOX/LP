@@ -63,23 +63,22 @@
     <Compile Include="CmdRunCalculation\FamilyUtils.cs" />
     <Compile Include="CmdRunCalculation\CmdRunCalculation.cs" />
     <Compile Include="CmdRunCalculation\GeometryUtils.cs" />
+    <Compile Include="CmdRunCalculation\MashService.cs" />
     <Compile Include="CmdRunCalculation\RodService.cs" />
-    <Compile Include="CmdRunCalculation\SphereService.cs" />
     <Compile Include="CmdRunCalculation\SphereUtils.cs" />
     <Compile Include="CmdRunCalculation\Query.cs" />
     <Compile Include="CmdRunCalculation\SphereIntersectionUtils.cs" />
-    <Compile Include="CmdSelectSphere\CmdSelectSphere.cs" />
+    <Compile Include="CmdSelectSphere\CmdSelectMesh.cs" />
     <Compile Include="CmdSelectSphere\FamilyLoaderService.cs" />
     <Compile Include="Parameters\GlobalParamsService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Parameters\SharedParametersService.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\LP_Sphere.rfa" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="CmdRunCalculation\CmdRunCalculationSchema.txt" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\LP_Mesh.rfa" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

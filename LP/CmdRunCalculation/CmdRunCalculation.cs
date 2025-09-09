@@ -54,15 +54,15 @@ namespace LP
                         return Result.Succeeded;
                     }
 
-                    // 4. Вставляємо сфери
-                    int placed = SphereService.PlaceSpheres(doc, tips, R, FamilyName);
+                    // 4. Вставляємо LP_Mash
+                    int placed = MashService.PlaceMashes(doc, tips, R, "LP_Mash");
 
                     tg.Assimilate();
 
                     TaskDialog.Show("LP - Report",
                         $"Блискавкоприймачів: {rods.Count}\n" +
                         $"Верхівок: {tips.Count}\n" +
-                        $"Розміщено сфер: {placed}");
+                        $"Розміщено LP_Mash: {placed}");
 
                     return Result.Succeeded;
                 }
