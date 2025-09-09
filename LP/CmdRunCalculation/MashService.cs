@@ -12,11 +12,18 @@ namespace LP
     public static class MashService
     {
         /// <summary>
-        /// Розміщує LP_Mesh на всіх допустимих трійках верхівок.
+        /// Розміщує LP_Mesh на всіх допустимих трійках верхівок та повертає лог координат.
         /// </summary>
-        public static int PlaceMashes(Document doc, List<XYZ> tips, double radius, string familyName)
+        /// <param name="doc">Документ Revit</param>
+        /// <param name="tips">Список верхівок (XYZ)</param>
+        /// <param name="radius">Радіус сфери для LP_Mesh</param>
+        /// <param name="familyName">Назва сімейства (LP_Mesh)</param>
+        /// <returns>Кортеж: кількість вставлених, лог координат (запропоновані / фактичні)</returns>
+        public static (int placed, List<List<(XYZ proposed, XYZ actual)>> pointsLog) PlaceMashes(
+            Document doc, List<XYZ> tips, double radius, string familyName)
         {
             int placed = 0;
+            var allPointsLog = new List<List<(XYZ proposed, XYZ actual)>>();
 
             // --- 1. Створюємо список усіх можливих трійок верхівок ---
             var triplets = new List<(XYZ, XYZ, XYZ)>();
@@ -25,7 +32,7 @@ namespace LP
                     for (int k = j + 1; k < tips.Count; k++)
                         triplets.Add((tips[i], tips[j], tips[k]));
 
-            // --- 2. Для кожної трійки розраховуємо потенційні центри сфер ---
+            // --- 2. Розраховуємо потенційні центри сфер ---
             var spheresCenters = new Dictionary<(XYZ, XYZ, XYZ), List<XYZ>>();
             foreach (var triplet in triplets)
             {
@@ -34,8 +41,8 @@ namespace LP
                 spheresCenters[triplet] = centers;
             }
 
-            // --- 3. Фільтруємо трійки, залишаємо лише ті, де верхня точка не колізує з іншими верхівками ---
-            var filteredTriplets = new List<(XYZ, XYZ, XYZ, XYZ)>(); // останній XYZ = центр сфери
+            // --- 3. Фільтруємо трійки ---
+            var filteredTriplets = new List<(XYZ, XYZ, XYZ, XYZ)>();
             foreach (var kvp in spheresCenters)
             {
                 var triplet = kvp.Key;
@@ -58,32 +65,32 @@ namespace LP
                     if (!collision)
                     {
                         filteredTriplets.Add((triplet.Item1, triplet.Item2, triplet.Item3, center));
-                        break; // беремо перший допустимий центр
+                        break;
                     }
                 }
             }
 
             // --- 4. Сортуємо трійки за годинниковою стрілкою ---
             var finalTriplets = filteredTriplets
-                .Select(t => (
-                    SortClockwise(t.Item1, t.Item2, t.Item3), // повертає масив/список XYZ
-                    t.Item4
-                ))
+                .Select(t => (SortClockwise(t.Item1, t.Item2, t.Item3), t.Item4))
                 .ToList();
 
-            // --- 5. Вставляємо LP_Mesh у одну транзакцію ---
+            // --- 5. Вставляємо LP_Mesh ---
             using (Transaction t = new Transaction(doc, "Place all LP_Mesh"))
             {
                 t.Start();
                 foreach (var (sortedPoints, center) in finalTriplets)
                 {
-                    FamilyUtils.PlaceMash(doc, sortedPoints, radius);
+                    // Вставка adaptive component та логування координат
+                    var (instance, pointsLog) = FamilyUtils.PlaceMash(doc, sortedPoints, radius);
+                    allPointsLog.Add(pointsLog);
+
                     placed++;
                 }
                 t.Commit();
             }
 
-            return placed;
+            return (placed, allPointsLog);
         }
 
         /// <summary>
@@ -105,7 +112,7 @@ namespace LP
             }).ToList();
 
             return pts.Zip(angles, (pt, ang) => new { pt, ang })
-                      .OrderByDescending(x => x.ang) // годинникова стрілка
+                      .OrderByDescending(x => x.ang)
                       .Select(x => x.pt)
                       .ToList();
         }
