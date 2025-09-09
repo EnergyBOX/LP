@@ -1,9 +1,7 @@
 ﻿using Autodesk.Revit.DB;
-using Autodesk.Revit.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace LP
 {
@@ -19,6 +17,7 @@ namespace LP
         public static int PlaceMashes(Document doc, List<XYZ> tips, double radius, string familyName)
         {
             int placed = 0;
+
             // --- 1. Створюємо список усіх можливих трійок верхівок ---
             var triplets = new List<(XYZ, XYZ, XYZ)>();
             for (int i = 0; i < tips.Count; i++)
@@ -64,25 +63,6 @@ namespace LP
                 }
             }
 
-            // Формуємо рядок для TaskDialog
-            StringBuilder sb = new StringBuilder();
-            int index = 1;
-            foreach (var item in filteredTriplets)
-            {
-                sb.AppendLine(
-                    $"{index}. " +
-                    $"Триплет: " +
-                    $"({item.Item1.X:F2},{item.Item1.Y:F2},{item.Item1.Z:F2}); " +
-                    $"({item.Item2.X:F2},{item.Item2.Y:F2},{item.Item2.Z:F2}); " +
-                    $"({item.Item3.X:F2},{item.Item3.Y:F2},{item.Item3.Z:F2}) " +
-                    $"=> Центр: ({item.Item4.X:F2},{item.Item4.Y:F2},{item.Item4.Z:F2})"
-                );
-                index++;
-            }
-
-            // Показуємо TaskDialog
-            TaskDialog.Show("Фільтровані триплети і центри", sb.ToString());
-
             // --- 4. Сортуємо трійки за годинниковою стрілкою ---
             var finalTriplets = filteredTriplets
                 .Select(t => (
@@ -91,39 +71,16 @@ namespace LP
                 ))
                 .ToList();
 
-            // Формуємо рядок для TaskDialog після сортування
-            StringBuilder sbFinal = new StringBuilder();
-            int idx = 1;
-            foreach (var item in finalTriplets)
+            // --- 5. Вставляємо LP_Mesh у одну транзакцію ---
+            using (Transaction t = new Transaction(doc, "Place all LP_Mesh"))
             {
-                var sorted = item.Item1; // відсортований масив (XYZ[])
-                var center = item.Item2;
-
-                sbFinal.AppendLine(
-                    $"{idx}. " +
-                    $"Триплет (CW): " +
-                    $"({sorted[0].X:F2},{sorted[0].Y:F2},{sorted[0].Z:F2}); " +
-                    $"({sorted[1].X:F2},{sorted[1].Y:F2},{sorted[1].Z:F2}); " +
-                    $"({sorted[2].X:F2},{sorted[2].Y:F2},{sorted[2].Z:F2}) " +
-                    $"=> Центр: ({center.X:F2},{center.Y:F2},{center.Z:F2})"
-                );
-                idx++;
-            }
-
-            // Показуємо TaskDialog
-            TaskDialog.Show("Фінальні відсортовані триплети", sbFinal.ToString());
-
-
-            // --- 5. Вставляємо LP_Mesh ---
-            foreach (var (sortedPoints, center) in finalTriplets)
-            {
-                using (Transaction t = new Transaction(doc, "Place LP_Mesh"))
+                t.Start();
+                foreach (var (sortedPoints, center) in finalTriplets)
                 {
-                    t.Start();
                     FamilyUtils.PlaceMash(doc, sortedPoints, radius);
-                    t.Commit();
+                    placed++;
                 }
-                placed++;
+                t.Commit();
             }
 
             return placed;
