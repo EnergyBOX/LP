@@ -20,27 +20,49 @@ namespace LP
             int placedCount = 0;
             var allPointsLog = new List<List<(XYZ proposed, XYZ actual)>>();
 
-            // --- 1. Створюємо всі можливі трійки верхівок, але лише ті, де сторони <= 2*radius ---
+            // --- 1. Створюємо всі можливі трійки верхівок ---
             var triplets = new List<(XYZ, XYZ, XYZ)>();
+            double maxDist = radius * 2; // поріг для "короткої сторони"
+
+            // Для прискорення: створимо простий пошук сусідів без сторонніх бібліотек
             for (int i = 0; i < tips.Count; i++)
             {
+                var neighbors = new List<int>();
+
+                // Збираємо всі сусідні точки в межах maxDist
                 for (int j = i + 1; j < tips.Count; j++)
                 {
-                    double dij = tips[i].DistanceTo(tips[j]);
-                    if (dij > 2 * radius) continue; // відсікаємо надто великі відстані
+                    if (tips[i].DistanceTo(tips[j]) <= maxDist)
+                        neighbors.Add(j);
+                }
 
-                    for (int k = j + 1; k < tips.Count; k++)
+                // Формуємо трійки серед сусідів
+                for (int n1 = 0; n1 < neighbors.Count; n1++)
+                {
+                    int j = neighbors[n1];
+                    for (int n2 = n1 + 1; n2 < neighbors.Count; n2++)
                     {
-                        double dik = tips[i].DistanceTo(tips[k]);
-                        double djk = tips[j].DistanceTo(tips[k]);
+                        int k = neighbors[n2];
 
-                        if (dik <= 2 * radius && djk <= 2 * radius)
+                        // Перевіряємо відстань між j та k
+                        if (tips[j].DistanceTo(tips[k]) <= maxDist)
                         {
                             triplets.Add((tips[i], tips[j], tips[k]));
                         }
                     }
                 }
             }
+
+
+            /// Стара версія але надійна
+            //// --- 1. Створюємо всі можливі трійки верхівок ---
+            //var triplets = new List<(XYZ, XYZ, XYZ)>();
+            //for (int i = 0; i < tips.Count; i++)
+            //    for (int j = i + 1; j < tips.Count; j++)
+            //        for (int k = j + 1; k < tips.Count; k++)
+            //            triplets.Add((tips[i], tips[j], tips[k]));
+
+
 
 
             // --- 2. Обчислюємо потенційні центри сфер ---
