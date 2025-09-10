@@ -20,12 +20,28 @@ namespace LP
             int placedCount = 0;
             var allPointsLog = new List<List<(XYZ proposed, XYZ actual)>>();
 
-            // --- 1. Створюємо всі можливі трійки верхівок ---
+            // --- 1. Створюємо всі можливі трійки верхівок, але лише ті, де сторони <= 2*radius ---
             var triplets = new List<(XYZ, XYZ, XYZ)>();
             for (int i = 0; i < tips.Count; i++)
+            {
                 for (int j = i + 1; j < tips.Count; j++)
+                {
+                    double dij = tips[i].DistanceTo(tips[j]);
+                    if (dij > 2 * radius) continue; // відсікаємо надто великі відстані
+
                     for (int k = j + 1; k < tips.Count; k++)
-                        triplets.Add((tips[i], tips[j], tips[k]));
+                    {
+                        double dik = tips[i].DistanceTo(tips[k]);
+                        double djk = tips[j].DistanceTo(tips[k]);
+
+                        if (dik <= 2 * radius && djk <= 2 * radius)
+                        {
+                            triplets.Add((tips[i], tips[j], tips[k]));
+                        }
+                    }
+                }
+            }
+
 
             // --- 2. Обчислюємо потенційні центри сфер ---
             var spheresCenters = new Dictionary<(XYZ, XYZ, XYZ), List<XYZ>>();
@@ -58,20 +74,24 @@ namespace LP
                 .Select(t => (SortClockwiseXY(t.Item1, t.Item2, t.Item3), t.Item4))
                 .ToList();
 
-            // --- 5. Вставляємо LP_Mesh і формуємо лог ---
-            foreach (var (sortedPoints, center) in finalTriplets)
+            // --- 5. Вставляємо LP_Mesh в одній транзакції і формуємо лог ---
+            using (Transaction t = new Transaction(doc, "Place All LP_Meshes"))
             {
-                using (Transaction t = new Transaction(doc, "Place LP_Mesh"))
+                t.Start();
+
+                foreach (var (sortedPoints, center) in finalTriplets)
                 {
-                    t.Start();
                     FamilyUtils.PlaceMash(doc, sortedPoints, radius);
-                    t.Commit();
+
+                    placedCount++;
+
+                    var log = sortedPoints.Select(p => (proposed: p, actual: p)).ToList();
+                    allPointsLog.Add(log);
                 }
 
-                placedCount++;
-                var log = sortedPoints.Select(p => (proposed: p, actual: p)).ToList();
-                allPointsLog.Add(log);
+                t.Commit();
             }
+
 
             return (placedCount, allPointsLog);
         }
