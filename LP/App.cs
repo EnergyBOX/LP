@@ -40,11 +40,11 @@ namespace LP
                 excludeRod.ToolTip = "The parameter will be disabled on all selected elements, removing their designation as lightning rods for the calculation.";
 
                 PushButtonData selectMesh = new PushButtonData(
-                    "SelectSphere",
-                    "Select \nSphere",
+                    "SelectMesh",
+                    "Select \nMesh",
                     assemblyPath,
                     "LP.CmdSelectMesh");
-                selectMesh.ToolTip = "Check if LP_Sphere family is loaded, then select a sphere radius for calculations.";
+                selectMesh.ToolTip = "Select the radius of the virtual sphere used to generate the corresponding mesh imprint.";
 
                 PushButtonData runCalculation = new PushButtonData(
                     "RunCalculation",
@@ -58,14 +58,22 @@ namespace LP
                     "Clear \nCalculation \nResults",
                     assemblyPath,
                     "LP.CmdClearResults");
-                clearResults.ToolTip = "All previous calculation results will be cleared";
+                clearResults.ToolTip = "All unpinned elements produced by this calculation will be cleared.";
 
                 PushButtonData currentResult = new PushButtonData(
                     "CurrentResult",
                     "Current \nCalculation \nResult",
                     assemblyPath,
                     "LP.CmdCurrentResult");
-                currentResult.ToolTip = "Show the current result of the lightning protection calculation";
+                currentResult.ToolTip = "Lists the current results and instances that are linked to the calculation.";
+
+                PushButtonData aboutButtonData = new PushButtonData(
+                    "AboutButton",
+                    "About",
+                    assemblyPath,
+                    "LP.CmdAbout");
+                aboutButtonData.ToolTip = "Information about the add-in, author, website link, and a short instruction.";
+
 
                 panel.AddItem(includeRod);
                 panel.AddItem(excludeRod);
@@ -73,6 +81,7 @@ namespace LP
                 panel.AddItem(runCalculation);
                 panel.AddItem(clearResults);
                 panel.AddItem(currentResult);
+                panel.AddItem(aboutButtonData);
 
                 return Result.Succeeded;
             }

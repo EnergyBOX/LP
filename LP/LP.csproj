@@ -73,9 +73,13 @@
     <Compile Include="Parameters\GlobalParamsService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Parameters\SharedParametersService.cs" />
+    <Compile Include="СmdAbout\CmdAbout.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\LP_Mesh.rfa" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Resources\CmdAbout\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
