@@ -18,7 +18,8 @@ namespace LP
             {
                 var allElements = new FilteredElementCollector(doc)
                                     .WhereElementIsNotElementType()
-                                    .ToElements();
+                                    .OfType<FamilyInstance>()
+                                    .ToList();
 
                 StringBuilder mainContent = new StringBuilder();
 
@@ -29,52 +30,66 @@ namespace LP
 
                 if (rodsYes.Any())
                 {
+                    var pinned = rodsYes.Where(e => e.Pinned).OrderBy(e => e.Symbol?.Name).ToList();
+                    var unpinned = rodsYes.Where(e => !e.Pinned).OrderBy(e => e.Symbol?.Name).ToList();
+
                     mainContent.AppendLine($"=== Lightning Rods ({rodsYes.Count}) ===");
-                    foreach (var el in rodsYes)
+
+                    if (pinned.Any())
                     {
-                        string typeName = el.Name;
-                        string pos = el.Location is LocationPoint lp ?
-                            $"X={lp.Point.X:F2}, Y={lp.Point.Y:F2}, Z={lp.Point.Z:F2}" : "N/A";
-                        mainContent.AppendLine($"  Type: {typeName} | Id: {el.Id} | Position: {pos}");
+                        mainContent.AppendLine($"-- Pinned ({pinned.Count}) --");
+                        foreach (var el in pinned)
+                        {
+                            string typeName = el.Symbol?.Name ?? el.Name;
+                            mainContent.AppendLine($"  Type: {typeName} | Id: {el.Id}");
+                        }
                     }
+
+                    if (unpinned.Any())
+                    {
+                        mainContent.AppendLine($"-- Unpinned ({unpinned.Count}) --");
+                        foreach (var el in unpinned)
+                        {
+                            string typeName = el.Symbol?.Name ?? el.Name;
+                            mainContent.AppendLine($"  Type: {typeName} | Id: {el.Id}");
+                        }
+                    }
+
                     mainContent.AppendLine();
                 }
 
-                // ===== Protected Zones =====
-                var zonesYes = allElements
-                    .Where(el => el.LookupParameter("LP_Is_ProtectedZone")?.AsInteger() == 1)
+                // ===== Meshes =====
+                var meshesYes = allElements
+                    .Where(el => el.LookupParameter("LP_Is_Mesh")?.AsInteger() == 1)
                     .ToList();
 
-                if (zonesYes.Any())
+                if (meshesYes.Any())
                 {
-                    mainContent.AppendLine($"=== Protected Zones ({zonesYes.Count}) ===");
-                    foreach (var el in zonesYes)
+                    var pinned = meshesYes.Where(e => e.Pinned).OrderBy(e => e.Symbol?.Name).ToList();
+                    var unpinned = meshesYes.Where(e => !e.Pinned).OrderBy(e => e.Symbol?.Name).ToList();
+
+                    mainContent.AppendLine($"=== Meshes ({meshesYes.Count}) ===");
+
+                    if (pinned.Any())
                     {
-                        string typeName = el.Name;
-                        string pos = el.Location is LocationPoint lp ?
-                            $"X={lp.Point.X:F2}, Y={lp.Point.Y:F2}, Z={lp.Point.Z:F2}" : "N/A";
-                        mainContent.AppendLine($"  Type: {typeName} | Id: {el.Id} | Position: {pos}");
+                        mainContent.AppendLine($"-- Pinned ({pinned.Count}) --");
+                        foreach (var el in pinned)
+                        {
+                            string typeName = el.Symbol?.Name ?? el.Name;
+                            mainContent.AppendLine($"  Type: {typeName} | Id: {el.Id}");
+                        }
                     }
-                    mainContent.AppendLine();
-                }
 
-                // ===== Spheres =====
-                var spheresYes = allElements
-                    .Where(el => el.LookupParameter("LP_Is_SphereThatCutsOff")?.AsInteger() == 1)
-                    .Cast<FamilyInstance>()
-                    .ToList();
-
-                if (spheresYes.Any())
-                {
-                    mainContent.AppendLine($"=== Spheres ({spheresYes.Count}) ===");
-                    foreach (var s in spheresYes)
+                    if (unpinned.Any())
                     {
-                        FamilySymbol symbol = s.Symbol;
-                        string pos = s.Location is LocationPoint lp ?
-                            $"X={lp.Point.X:F2}, Y={lp.Point.Y:F2}, Z={lp.Point.Z:F2}" : "N/A";
-
-                        mainContent.AppendLine($"  Type: {symbol.Name} | Id: {s.Id} | Position: {pos}");
+                        mainContent.AppendLine($"-- Unpinned ({unpinned.Count}) --");
+                        foreach (var el in unpinned)
+                        {
+                            string typeName = el.Symbol?.Name ?? el.Name;
+                            mainContent.AppendLine($"  Type: {typeName} | Id: {el.Id}");
+                        }
                     }
+
                     mainContent.AppendLine();
                 }
 
@@ -95,10 +110,7 @@ namespace LP
                 td.Show();
 
                 // ===== Виділення елементів у активному виді =====
-                var highlightElements = rodsYes.Select(e => e.Id)
-                    .Concat(zonesYes.Select(e => e.Id))
-                    .Concat(spheresYes.Select(e => e.Id))
-                    .ToList();
+                var highlightElements = rodsYes.Concat(meshesYes).Select(e => e.Id).ToList();
 
                 if (highlightElements.Any())
                 {

@@ -39,20 +39,6 @@ namespace LP
                     "LP.CmdExcludeRod");
                 excludeRod.ToolTip = "The parameter will be disabled on all selected elements, removing their designation as lightning rods for the calculation.";
 
-                PushButtonData includeZone = new PushButtonData(
-                    "IncludeZone",
-                    "Include \nProtected \nZone",
-                    assemblyPath,
-                    "LP.CmdIncludeZone");
-                includeZone.ToolTip = "The parameter will be applied and enabled on the selected element, marking it as the volume protected by the rod for calculation purposes.";
-
-                PushButtonData excludeZone = new PushButtonData(
-                    "ExcludeZone",
-                    "Exclude \nProtected \nZone",
-                    assemblyPath,
-                    "LP.CmdExcludeZone");
-                excludeZone.ToolTip = "The parameter will be disabled on the selected element, removing its designation as the volume protected by the rod for calculation purposes.";
-
                 PushButtonData selectMesh = new PushButtonData(
                     "SelectSphere",
                     "Select \nSphere",
@@ -66,13 +52,6 @@ namespace LP
                     assemblyPath,
                     "LP.CmdRunCalculation");
                 runCalculation.ToolTip = "Previous results will be deleted, and the calculation will be performed for all involved elements.";
-
-                PushButtonData cutZones = new PushButtonData(
-                    "CutProtectedZones",
-                    "Cut \nProtected \nZones",
-                    assemblyPath,
-                    "LP.CmdCutProtectedZones");
-                cutZones.ToolTip = "Cut all protected zones using sphere-voids in the project.";
 
                 PushButtonData clearResults = new PushButtonData(
                     "ClearResults",
@@ -90,11 +69,8 @@ namespace LP
 
                 panel.AddItem(includeRod);
                 panel.AddItem(excludeRod);
-                panel.AddItem(includeZone);
-                panel.AddItem(excludeZone);
                 panel.AddItem(selectMesh);
                 panel.AddItem(runCalculation);
-                panel.AddItem(cutZones);
                 panel.AddItem(clearResults);
                 panel.AddItem(currentResult);
 

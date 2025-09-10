@@ -1,18 +1,34 @@
 ﻿using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using System;
 
 namespace LP
 {
-    //Clear Calculation Results
     [Transaction(TransactionMode.Manual)]
     public class CmdClearResults : IExternalCommand
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-            TaskDialog.Show("Info", "Clear Calculation Results command executed.");
-            return Result.Succeeded;
+            UIDocument uiDoc = commandData.Application.ActiveUIDocument;
+            Document doc = uiDoc.Document;
+
+            try
+            {
+                // Викликаємо сервіс очистки
+                var clearResult = CleaningResultsService.Clear(doc);
+
+                // Показуємо звіт
+                TaskDialog.Show("Clear Results",
+                    $"Знайдено екземплярів LP_Mesh: {clearResult.TotalFound}\n" +
+                    $"Видалено (IsMesh=Yes, Unpinned): {clearResult.TotalDeleted}");
+
+                return Result.Succeeded;
+            }
+            catch (System.Exception ex)
+            {
+                message = ex.Message;
+                return Result.Failed;
+            }
         }
     }
 }
